@@ -205,7 +205,7 @@ class Convertor(object):
             proxyhandler = urllib.ProxyHandler({"https": self.proxy})
             opener = urllib.build_opener(proxyhandler)
             urllib.install_opener(opener)
-            transport = ProxiedTransport(self.proxy)
+            transport = ProxyTransport(self.proxy)
         if not hasattr(self, '_client'):
             if self.pypi:
                 if self.proxy:
@@ -218,7 +218,7 @@ class Convertor(object):
         return self._client
 
 
-class ProxiedTransport(xmlrpclib.Transport):
+class ProxyTransport(xmlrpclib.Transport):
     # Put here an identification string for your application
     user_agent = 'pyp2rpm_client'
 
