@@ -84,6 +84,14 @@ def main(package, v, d, s, r, proxy, srpm, p, b, o, t, venv):
 
     logger.info('Pyp2rpm initialized.')
 
+    if not proxy:
+        logger.info('No Proxy Defined. Checking ENV')
+        if os.environ.get('https_proxy'):
+            logger.info('Proxy: {0} .'.format(proxy))
+            proxy = os.environ.get('https_proxy')
+            proxy = proxy.replace("http://", "")
+            proxy.strip("/")
+
     convertor = Convertor(package=package,
                           version=v,
                           save_dir=d,
