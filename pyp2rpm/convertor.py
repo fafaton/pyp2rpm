@@ -199,14 +199,14 @@ class Convertor(object):
         Returns:
             XMLRPC client for PyPI.
         """
+        transport = None
         # cannot use "if self._client"...
         if self.proxy:
-            proxyhandler = urllib.ProxyHandler({"http": self.proxy})
+            proxyhandler = urllib.ProxyHandler({"https": self.proxy})
             opener = urllib.build_opener(proxyhandler)
             urllib.install_opener(opener)
-            transport = ProxyTransport()
+            transport = ProxiedTransport(self.proxy)
         if not hasattr(self, '_client'):
-            transport = None
             if self.pypi:
                 if self.proxy:
                     logger.info('Using provided proxy: {0}.'.format(self.proxy))
@@ -218,15 +218,24 @@ class Convertor(object):
         return self._client
 
 
-class ProxyTransport(xmlrpclib.Transport):
-    """This class serves as Proxy Transport for XMLRPC server."""
+class ProxiedTransport(xmlrpclib.Transport):
+    # Put here an identification string for your application
+    user_agent = 'pyp2rpm_client'
 
-    def request(self, host, handler, request_body, verbose):
-        self.verbose = verbose
-        url = 'http://{0}{1}'.format(host, handler)
-        request = urllib.Request(url)
-        request.add_data(request_body)
-        request.add_header("User-Agent", self.user_agent)
-        request.add_header("Content-Type", "text/html")
-        f = urllib.urlopen(request)
-        return self.parse_response(f)
+    def set_proxy(self, proxy):
+        self.proxy = proxy
+
+    def make_connection(self, host):
+        self.realhost = host
+        import httplib
+        return httplib.HTTPConnection(self.proxy)
+
+    def send_request(self, connection, handler, request_body):
+        connection.putrequest("POST", 'http://%s%s' % (self.realhost, handler))
+
+    def send_host(self, connection, host):
+        connection.putheader('Host', self.realhost)
+
+    def __init__(self, proxy, use_datetime = 0):
+        xmlrpclib.Transport.__init__(self, use_datetime)
+        self.set_proxy(proxy)
